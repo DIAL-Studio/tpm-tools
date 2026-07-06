@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "skills": [
+    {
+      "name": "tpm-artifacts",
+      "description": "Templates and scaffolds for product management deliverables — PRDs, one-pagers, RFCs, RICE prioritization, roadmap entries, sliced epics with acceptance criteria, and experiment designs. Load when a structured TPM artifact is needed.",
+      "url": "https://raw.githubusercontent.com/DIAL-Studio/tpm-tools/main/skills/tpm-artifacts/SKILL.md"
+    }
+  ]
+}
