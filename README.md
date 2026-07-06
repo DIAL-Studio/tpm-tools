@@ -10,9 +10,20 @@ Reusable **Technical Product Manager** agent + skills for AI coding runtimes. To
 | `agents/tpm.md` | Agent | opencode | Primary agent. Translates ambiguity into crisp requirements, prioritizes rigorously (RICE), orchestrates engineering work without writing code itself. |
 | `.well-known/skills.json` | Manifest | opencode | Discoverable skill listing consumed by `skills.urls`. |
 
-## Install (opencode)
+## Supported runtimes
 
-### One-liner (recommended)
+| Runtime | Status | Config root | Notes |
+|---------|--------|-------------|-------|
+| `opencode` | ✅ supported | `~/.config/opencode` | Default. Agent + skill auto-discovered. |
+| `claude` | 🟡 planned | `~/.claude` | SKILL.md format-compatible; agent frontmatter needs adaptation. |
+| `copilot` | 🟡 planned | `~/.github/copilot` | Chatmode format under validation. |
+| `cursor` | 🟡 planned | `~/.cursor` | Spec TBD. |
+
+Vote or track progress: https://github.com/DIAL-Studio/tpm-tools/issues
+
+## Install
+
+### One-liner (recommended, default runtime = opencode)
 
 opencode auto-discovers any `SKILL.md` under `~/.config/opencode/skills/<name>/` and any agent under `~/.config/opencode/agents/`. The installer just copies both files there — **no config editing required**:
 
@@ -22,10 +33,32 @@ curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/tpm-tools/main/install.
 
 Restart opencode, press **Tab**, and `tpm` is there.
 
+### Choose a runtime
+
+Pass `--runtime` (or `TPM_TOOLS_RUNTIME` env var, useful for `curl | bash`):
+
+```bash
+# Local script invocation
+./install.sh --runtime opencode
+./install.sh --list-runtimes
+
+# curl | bash with env var
+curl -fsSL .../install.sh | TPM_TOOLS_RUNTIME=opencode bash
+
+# Pin a release
+TPM_TOOLS_BRANCH=v1.0.2 ./install.sh --runtime opencode
+
+# Custom config dir (opencode only)
+OPENCODE_CONFIG_DIR=/custom/path ./install.sh --runtime opencode
+```
+
+Calling `--runtime claude` (or `copilot`/`cursor`) today prints a "planned" banner and exits `2` — no files are modified until the adapter is finished.
+
 ### One-liner uninstall
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/tpm-tools/main/uninstall.sh | bash
+# / TPM_TOOLS_RUNTIME=opencode bash
 ```
 
 ### Manual install
@@ -107,9 +140,10 @@ Every template ends with **"Decisions still needed"** and **"Next concrete step"
 
 ## Roadmap
 
-- [x] opencode agent + skill
-- [ ] Claude Code adapter (`SKILL.claude.md`)
-- [ ] Cursor adapter
+- [x] opencode agent + skill (`--runtime opencode`)
+- [ ] `--runtime claude` adapter (skill auto-loaded from `~/.claude/skills/`; agent frontmatter rewrite)
+- [ ] `--runtime copilot` adapter (`.github/copilot/...` chatmode format)
+- [ ] `--runtime cursor` adapter
 - [ ] More skills under `skills/` (metrics-kit, stakeholder-brief)
 
 ## Contributing
