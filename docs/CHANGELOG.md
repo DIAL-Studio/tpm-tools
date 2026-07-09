@@ -888,13 +888,12 @@ See [LICENSE](LICENSE) for full details.
 
 ---
 
-**v1.1.1 — July 9, 2026 (pm-agent-harness-kit / PM-AHK)**
+**v1.2.0 — July 9, 2026 (pm-agent-harness-kit / PM-AHK)**
 
 Highlights in this release:
-- Automatic update notification — `pm-lead` checks version on startup and alerts user
+- Automatic update notification — `pm-lead` checks version on startup and alerts user (4 mechanisms: agent auto-check, manual check-update, desktop notify, GitHub watch)
 - `scripts/notify-update.sh` — desktop notification via cron/launchd (macOS + Linux)
 - README: update notification section with all 4 mechanisms explained
-- Tagged release on GitHub
 
 **v1.1.0 — July 9, 2026 (pm-agent-harness-kit / PM-AHK)**
 

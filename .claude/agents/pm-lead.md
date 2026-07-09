@@ -64,7 +64,7 @@ On your **first interaction each session**, check whether the user's installed v
 2. Fetch the remote VERSION file from `https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/VERSION`
 3. Compare locally installed vs remote. If different, mention it briefly at the start of your response:
 
-   > "A new version of pm-agent-harness-kit is available (v1.1.1 → v1.2.0). Run this to update:
+   > "A new version of pm-agent-harness-kit is available (v{CURRENT} → v{LATEST}). Run this to update:
    > `curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/update.sh | bash`"
 
 If the fetch fails (no internet), stay silent — don't delay the user's request.
