@@ -173,13 +173,28 @@ curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/ma
 
 ### Silent (for scripts or when you know your runtime)
 
+**opencode:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/install.sh | TPM_TOOLS_RUNTIME=opencode bash
+```
+
+**Claude Code:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/install.sh | TPM_TOOLS_RUNTIME=claude-code bash
-./install.sh --runtime opencode
-./install.sh --list-runtimes
+```
 
-# Pin a specific branch/release
-TPM_TOOLS_BRANCH=v1.3.0 ./install.sh --runtime opencode
+**Pin a specific release:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/install.sh | TPM_TOOLS_BRANCH=v1.3.0 TPM_TOOLS_RUNTIME=opencode bash
+```
+
+**List available runtimes:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/install.sh | bash -s -- --list-runtimes
 ```
 
 ### Uninstall
@@ -199,13 +214,13 @@ When you start a session with `pm-lead`, it reads a local flag file (`pm-ahk.upd
 **2. Manual check**
 
 ```bash
-# Human-readable
 curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/scripts/check-update.sh | bash
-# Output: "Update available: v1.2.0 → v1.3.0"
+```
 
-# Machine-readable (for scripts, CI, shell prompts)
+For scripts and CI, use `--json`:
+
+```bash
 curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/scripts/check-update.sh | bash -s -- --json
-# {"status":"update_available","installed":"1.2.0","latest":"1.3.0"}
 ```
 
 **3. GitHub — watch the repo**
@@ -242,11 +257,10 @@ If you prefer to keep skills remote rather than vendored locally:
 Then install the agents locally (opencode has no remote-agent channel):
 
 ```bash
-# Install all 7 agents
-curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/agents/pm-lead.md \
-  -o ~/.config/opencode/agents/pm-lead.md
-# Repeat for pm-explorer.md, pm-strategist.md, pm-builder.md, pm-reviewer.md,
-# pm-coach.md, pm-smith.md
+for agent in pm-lead pm-explorer pm-strategist pm-builder pm-reviewer pm-coach pm-smith; do
+  curl -fsSL "https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/agents/${agent}.md" \
+    -o "${HOME}/.config/opencode/agents/${agent}.md"
+done
 ```
 
 ### Verify
