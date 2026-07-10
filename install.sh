@@ -135,73 +135,65 @@ if [[ -z "$RUNTIME" ]]; then
     die "No runtime specified. Use --runtime <id> or TPM_TOOLS_RUNTIME=<id>."
   fi
   # ── Interactive TUI ──
-  echo ""
-  box_top
-  box_title "  pm-agent-harness-kit v$(cat "${BASH_SOURCE%/*}/../VERSION" 2>/dev/null || echo "?")"
-  box_line ""
-  box_line "  7 specialized PM agents · 59 skills"
-  box_line ""
-  box_line "  Pipeline: pm-lead → explorer → strategist → builder → reviewer"
-  box_bot
-  echo ""
+  VER="$(cat "${BASH_SOURCE%/*}/../VERSION" 2>/dev/null || echo "?")"
 
-  runtimes
-  echo ""
+  # Header
+  printf "\n  ${MAGENTA}${BOLD}pm-agent-harness-kit${RESET} ${DIM}v${VER}${RESET}\n"
+  printf "  ${DIM}7 specialized PM agents · 59 skills${RESET}\n"
+  printf "  ${DIM}pm-lead → explorer → strategist → builder → reviewer${RESET}\n\n"
+
+  # Step 1 — Runtime
+  printf "  ${BOLD}▸ AI Runtime${RESET}\n"
+  printf "  ${CYAN}1)${RESET} opencode      ${DIM}(default)${RESET}\n"
+  printf "  ${CYAN}2)${RESET} claude-code\n"
+  printf "  ${CYAN}3)${RESET} copilot       ${DIM}(planned)${RESET}\n"
+  printf "  ${CYAN}4)${RESET} codex         ${DIM}(planned)${RESET}\n\n"
   while true; do
-    read -r -p "  Which AI tool do you use? [1] " choice < /dev/tty
-    choice="${choice:-1}"
+    read -r -p "  Choice [1]: " choice < /dev/tty
     choice="${choice:-1}"
     case "$choice" in
       1) RUNTIME="opencode"; break ;;
       2) RUNTIME="claude-code"; break ;;
       3) RUNTIME="copilot"; break ;;
       4) RUNTIME="codex"; break ;;
-      *) echo "  Invalid choice. Enter 1-4." ;;
+      *) printf "  ${YELLOW}Invalid. Enter 1-4.${RESET}\n" ;;
     esac
   done
 
-  # Show compliance for planned runtimes
+  # Copilot/Codex compliance note
   case "$RUNTIME" in
     copilot|codex)
-      echo ""
-      yellow "  '$RUNTIME' is planned — files will be installed but runtime integration"
-      yellow "  is not yet complete. Track progress at the issues page."
-      echo ""
+      printf "\n  ${YELLOW}'${RUNTIME}' is planned — files install but runtime integration\n"
+      printf "  is not complete.${RESET}\n\n"
       read -r -p "  Continue anyway? (y/N) " confirm < /dev/tty
-      [[ "$confirm" =~ ^[Yy] ]] || exit 0
+      [[ "$confirm" =~ ^[Yy] ]] || { printf "  ${DIM}Cancelled.${RESET}\n"; exit 0; }
       ;;
   esac
 
-  # Config directory
+  # Step 2 — Path
   case "$RUNTIME" in
     opencode)    DEFAULT_DIR="$HOME/.config/opencode" ;;
     claude-code) DEFAULT_DIR="$HOME/.claude" ;;
     copilot)     DEFAULT_DIR="$HOME/.github/copilot" ;;
     codex)       DEFAULT_DIR="$HOME/.codex" ;;
   esac
-  echo ""
-  read -r -p "  Install to: [$DEFAULT_DIR] " config_input < /dev/tty
+  printf "\n  ${BOLD}▸ Install path${RESET}\n"
+  read -r -p "  [${DEFAULT_DIR}]: " config_input < /dev/tty
   OC_ROOT="${config_input:-$DEFAULT_DIR}"
 
-  # Summary and confirmation
-  echo ""
-  box_top
-  box_line "  Summary"
-  box_line ""
-  box_line "  Runtime:     $(magenta "$RUNTIME")"
-  box_line "  Config path: $(magenta "$OC_ROOT")"
-  box_line "  Skills:      59"
-  box_line "  Agents:      7"
-  box_line "  Updates:     pm-lead checks on startup (no notifications)"
-  box_bot
-  echo ""
+  # Step 3 — Summary
+  printf "\n  ${BOLD}▸ Summary${RESET}\n"
+  printf "  ${DIM}Runtime:${RESET}     ${CYAN}${RUNTIME}${RESET}\n"
+  printf "  ${DIM}Install to:${RESET}  ${CYAN}${OC_ROOT}${RESET}\n"
+  printf "  ${DIM}Skills:${RESET}      59\n"
+  printf "  ${DIM}Agents:${RESET}      7  ${DIM}(pm-lead, explorer, strategist, builder, reviewer)${RESET}\n"
+  printf "  ${DIM}Updates:${RESET}     ${GREEN}pm-lead checks on startup${RESET}\n\n"
   read -r -p "  Proceed? (Y/n) " confirm < /dev/tty
   if [[ "$confirm" =~ ^[Nn] ]]; then
-    echo ""
-    yellow "  Cancelled."
+    printf "  ${DIM}Cancelled.${RESET}\n"
     exit 0
   fi
-  echo ""
+  printf "\n"
 
 else
   # ── Silent mode (runtime specified) ──
