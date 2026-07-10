@@ -14,6 +14,7 @@ RUNTIME="${TPM_TOOLS_RUNTIME:-opencode}"
 green()  { printf "\033[32m%s\033[0m\n" "$*"; }
 red()    { printf "\033[31m%s\033[0m\n" "$*"; }
 cyan()   { printf "\033[36m%s\033[0m\n" "$*"; }
+yellow() { printf "\033[33m%s\033[0m\n" "$*"; }
 die()    { red "error: $*" >&2; exit 1; }
 
 RUNTIME_TABLE=(
