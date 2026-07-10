@@ -1,6 +1,6 @@
 ---
 description: Delivery agent — builds product specifications: PRDs, user stories, and acceptance criteria. Only agent that produces engineering-ready artifacts. Does NOT write code.
-mode: subagent
+mode: primary
 color: "#10B981"
 temperature: 0.2
 permission:
