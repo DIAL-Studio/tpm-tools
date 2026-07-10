@@ -888,6 +888,16 @@ See [LICENSE](LICENSE) for full details.
 
 ---
 
+**v1.4.0 — July 9, 2026 (pm-agent-harness-kit / PM-AHK)**
+
+Highlights in this release:
+- **Agent mode fixed**: pipeline agents use `mode: all` — visible in Tab bar AND delegatable via Task tool. pm-lead stays `mode: primary`.
+- **openode 500 errors fixed**: removed `find *` and `webfetch` permissions that crashed the server. Parity restored with original working tpm.md.
+- **TUI works with curl|bash**: interactive prompts now read from `/dev/tty` so piped installs show the menu.
+- **Backup cleanup**: installer removes old `.bak.*` files before each install — no more 485-backup-file accumulation.
+- **Docs**: all README commands are copy-pasteable, separated into individual blocks. Silent installs for opencode and Claude Code.
+- Misc fixes: uninstall yellow() function, PNG file in docs/announcements removed.
+
 **v1.3.0 — July 9, 2026 (pm-agent-harness-kit / PM-AHK)**
 
 Highlights in this release:
