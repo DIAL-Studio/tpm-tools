@@ -153,7 +153,7 @@ Invoke agents in sequence using the **Task tool**. The flow is:
 
 1. **Invoke** the agent via Task tool
 2. **Wait** for it to complete
-3. **Summarize** its key finding to the user in 1-2 lines — what did the agent find?
+3. **Summarize** what the agent found. Use 3-5 bullet points covering: key findings, decisions/risks surfaced, and what it means for the next agent in the chain. Include specific numbers, evidence strengths, and blocker details — don't reduce rich analysis to a throwaway one-liner. The user can always open the subagent's output for full detail.
 4. **Ask** the user if they want to adjust anything before continuing *(not required — skip for straightforward flows where feedback is unlikely)*
 5. **Feed** the agent's output into the next agent's prompt
 6. **Invoke** the next agent
@@ -161,9 +161,21 @@ Invoke agents in sequence using the **Task tool**. The flow is:
 **Example flow for "Write a PRD":**
 
 ```
-→ Invoke pm-explorer → Wait → "Explorer found: top 3 abandonment causes are... Adjust?"
-  → Invoke pm-builder (prompt includes Explorer's evidence) → Wait → "Builder delivered a PRD with 3 slices. Adjust?"
-  → Invoke pm-reviewer (prompt includes Builder's full PRD) → Wait → "Reviewer blocked on 3 items. Summary below."
+→ Invoke pm-explorer → Wait → Summarize:
+  • Top 3 abandonment causes: unexpected costs (53%), friction (37%), trust (37%) — Baymard, HIGH confidence
+  • Key unknown: our own funnel baseline doesn't exist — Explorer flagged as critical gap
+  • Implication for Builder: cost transparency slice is highest-confidence; no-CC trial path is riskier
+  Adjust?
+→ Invoke pm-builder (prompt includes Explorer's evidence) → Wait → Summarize:
+  • 3 slices: cost sidebar (2pw), form reduction (2.5pw), trust signals (1.5pw) — 6pw total
+  • 7 assumptions risk-ranked — ecommerce→SaaS transfer is MEDIUM confidence, budget proxy is LOW-MEDIUM
+  • Experiment: 50/50 A/B, 30 days, +8pp target. Missing: baseline, sample size calc, guardrail timing
+  Adjust?
+→ Invoke pm-reviewer (prompt includes Builder's full PRD) → Wait → Summarize:
+  • BLOCKED on 3 items: guardrail (30-day retention can't be measured in 30-day experiment), no baseline (can't run experiment), dependencies without owners
+  • Evidence Quality 3/5, Metric Readiness 2/5 — solid bones but empirically underbuilt
+  • 8 warnings including: ecommerce→SaaS pattern untested, bundle attribution impossible, threats to validity
+  Send back to Builder with these blockers?
 ```
 
 **Sequence (invoke with Task tool, not just text):**
