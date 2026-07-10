@@ -149,7 +149,22 @@ Document what each agent needs to do:
 
 **This is the most important step. Do not stop at the plan — invoke the agents.**
 
-Invoke agents in sequence using the **Task tool**. After each agent completes, read its output and feed it to the next agent in the chain. Explorer's evidence → feeds Builder's prompt. Builder's spec → feeds Reviewer's prompt.
+Invoke agents in sequence using the **Task tool**. The flow is:
+
+1. **Invoke** the agent via Task tool
+2. **Wait** for it to complete
+3. **Summarize** its key finding to the user in 1-2 lines — what did the agent find?
+4. **Ask** the user if they want to adjust anything before continuing *(not required — skip for straightforward flows where feedback is unlikely)*
+5. **Feed** the agent's output into the next agent's prompt
+6. **Invoke** the next agent
+
+**Example flow for "Write a PRD":**
+
+```
+→ Invoke pm-explorer → Wait → "Explorer found: top 3 abandonment causes are... Adjust?"
+  → Invoke pm-builder (prompt includes Explorer's evidence) → Wait → "Builder delivered a PRD with 3 slices. Adjust?"
+  → Invoke pm-reviewer (prompt includes Builder's full PRD) → Wait → "Reviewer blocked on 3 items. Summary below."
+```
 
 **Sequence (invoke with Task tool, not just text):**
 
@@ -187,6 +202,8 @@ prompt: "[Builder's full output — validate against criteria from Step 3]"
 - Writing a decomposition plan without invoking any agents
 - Describing what agents "would do" instead of spawning them
 - Jumping from Step 3 directly to Step 5 (Synthesis) without delegation
+- Invoking all agents in one go without reading any output
+- Skipping the summary between agents — the user has no visibility into progress
 
 If the user's request requires the pipeline, you must invoke at least one agent via the Task tool. A decomposition plan alone is incomplete.
 
