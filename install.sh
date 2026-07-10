@@ -135,7 +135,6 @@ if [[ -z "$RUNTIME" ]]; then
     die "No runtime specified. Use --runtime <id> or TPM_TOOLS_RUNTIME=<id>."
   fi
   # ── Interactive TUI ──
-  clear 2>/dev/null || true
   echo ""
   box_top
   box_title "  pm-agent-harness-kit v$(cat "${BASH_SOURCE%/*}/../VERSION" 2>/dev/null || echo "?")"
@@ -149,7 +148,8 @@ if [[ -z "$RUNTIME" ]]; then
   runtimes
   echo ""
   while true; do
-    read -r -p "  Which AI tool do you use? [1] " choice
+    read -r -p "  Which AI tool do you use? [1] " choice < /dev/tty
+    choice="${choice:-1}"
     choice="${choice:-1}"
     case "$choice" in
       1) RUNTIME="opencode"; break ;;
@@ -167,7 +167,7 @@ if [[ -z "$RUNTIME" ]]; then
       yellow "  '$RUNTIME' is planned — files will be installed but runtime integration"
       yellow "  is not yet complete. Track progress at the issues page."
       echo ""
-      read -r -p "  Continue anyway? (y/N) " confirm
+      read -r -p "  Continue anyway? (y/N) " confirm < /dev/tty
       [[ "$confirm" =~ ^[Yy] ]] || exit 0
       ;;
   esac
@@ -180,7 +180,7 @@ if [[ -z "$RUNTIME" ]]; then
     codex)       DEFAULT_DIR="$HOME/.codex" ;;
   esac
   echo ""
-  read -r -p "  Install to: [$DEFAULT_DIR] " config_input
+  read -r -p "  Install to: [$DEFAULT_DIR] " config_input < /dev/tty
   OC_ROOT="${config_input:-$DEFAULT_DIR}"
 
   # Summary and confirmation
@@ -195,7 +195,7 @@ if [[ -z "$RUNTIME" ]]; then
   box_line "  Updates:     pm-lead checks on startup (no notifications)"
   box_bot
   echo ""
-  read -r -p "  Proceed? (Y/n) " confirm
+  read -r -p "  Proceed? (Y/n) " confirm < /dev/tty
   if [[ "$confirm" =~ ^[Nn] ]]; then
     echo ""
     yellow "  Cancelled."

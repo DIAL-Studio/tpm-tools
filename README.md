@@ -174,12 +174,12 @@ curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/ma
 ### Silent (for scripts or when you know your runtime)
 
 ```bash
-curl -fsSL .../install.sh | TPM_TOOLS_RUNTIME=claude-code bash
+curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/install.sh | TPM_TOOLS_RUNTIME=claude-code bash
 ./install.sh --runtime opencode
 ./install.sh --list-runtimes
 
 # Pin a specific branch/release
-TPM_TOOLS_BRANCH=v1.2.0 ./install.sh --runtime opencode
+TPM_TOOLS_BRANCH=v1.3.0 ./install.sh --runtime opencode
 ```
 
 ### Uninstall
@@ -204,7 +204,7 @@ curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/ma
 # Output: "Update available: v1.2.0 → v1.3.0"
 
 # Machine-readable (for scripts, CI, shell prompts)
-curl -fsSL .../scripts/check-update.sh | bash -s -- --json
+curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/scripts/check-update.sh | bash -s -- --json
 # {"status":"update_available","installed":"1.2.0","latest":"1.3.0"}
 ```
 
