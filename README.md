@@ -24,7 +24,11 @@ pm-lead → pm-explorer → pm-strategist (conditional) → pm-builder → pm-re
  Orchestrator  Discovery    Strategy advisor         Spec creation   Validation
 ```
 
-Start with `pm-lead` for any PM task. It classifies your request and either answers directly (lightweight queries) or routes you through the specialist pipeline. Full documentation: [docs/PM-AHK.md](docs/PM-AHK.md).
+Start with `pm-lead` for any PM task. It classifies your request and either answers directly (lightweight queries) or routes you through the specialist pipeline.
+
+**Learning PM?** [docs/PM-GUIDE.md](docs/PM-GUIDE.md) — step-by-step from zero to agent-powered PM.
+
+Full documentation: [docs/PM-AHK.md](docs/PM-AHK.md).
 
 ## Full Skill Library (59 skills)
 
