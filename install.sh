@@ -218,7 +218,7 @@ if [[ -z "$RUNTIME" ]]; then
   printf "  ${DIM}Scope:${RESET}       ${CYAN}${SCOPE}${RESET}\n"
   printf "  ${DIM}Install to:${RESET}  ${CYAN}${OC_ROOT}${RESET}\n"
   printf "  ${DIM}Skills:${RESET}      59\n"
-  printf "  ${DIM}Agents:${RESET}      7  ${DIM}(5 in Tab, 2 subagent-only)${RESET}\n"
+  printf "  ${DIM}Agents:${RESET}      7  ${DIM}(4 in Tab, 3 subagent-only)${RESET}\n"
   printf "  ${DIM}Updates:${RESET}     ${GREEN}pm-lead checks on startup${RESET}\n\n"
   read -r -p "  Proceed? (Y/n) " confirm < /dev/tty
   if [[ "$confirm" =~ ^[Nn] ]]; then

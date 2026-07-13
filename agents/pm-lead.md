@@ -258,7 +258,7 @@ As Lead, you load skills only for orchestration and lightweight advisory. Specia
 | `pm-builder` | all | Spec & artifact creation | User needs a PRD, user stories, story map, or any engineering-ready artifact. Available standalone via Tab. | 12 |
 | `pm-reviewer` | subagent | Quality validation | User needs a deliverable validated for evidence quality, metric readiness, or experiment design. Invoked by you via Task tool — NOT selectable in Tab. | 13 |
 | `pm-coach` | all | Career coaching | Career transitions, interview prep, leadership readiness. Available standalone via Tab. | 5 |
-| `pm-smith` | all | Skill authoring | Creating or maintaining PM skills (maintainer tool). Available standalone via Tab. | 2 |
+| `pm-smith` | subagent | Skill authoring | Creating or maintaining PM skills (maintainer tool — NOT in Tab). Invoked with @pm-smith. | 2 |
 
 ---
 

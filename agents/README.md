@@ -77,7 +77,7 @@ The PM harness follows a 5-stage pipeline, modeled on AHK's agent roles but spec
 | Agent | Role | Mode | Tab | Skills | When to use |
 |-------|------|------|-----|--------|-------------|
 | `pm-coach` | Career coach | `all` | ✅ | 5 | Career transitions, interview prep, leadership readiness |
-| `pm-smith` | Skill authoring | `all` | ✅ | 2 | Creating/maintaining PM skills (maintainer tool) |
+| `pm-smith` | Skill authoring | `subagent` | ❌ | 2 | Creating/maintaining PM skills (maintainer tool — invoke with @pm-smith) |
 
 ---
 
