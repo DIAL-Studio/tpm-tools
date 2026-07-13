@@ -18,6 +18,7 @@ BRANCH="${TPM_TOOLS_BRANCH:-main}"
 BASE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 ARCHIVE_URL="https://github.com/${REPO}/archive/${BRANCH}.tar.gz"
 RUNTIME="${TPM_TOOLS_RUNTIME:-}"
+SCOPE="${TPM_TOOLS_SCOPE:-}"
 NON_INTERACTIVE=false
 SKILL_COUNT=0
 
@@ -84,12 +85,14 @@ Usage:
 
 Flags:
   --runtime <id>       Choose runtime (silent mode — no prompts)
+  --scope <id>         Install globally or in current project (global|project)
   --non-interactive    Fail if --runtime is not set
   --list-runtimes      Print all known runtimes and exit
   -h, --help           Show this help
 
 Environment:
   TPM_TOOLS_RUNTIME      Same as --runtime
+  TPM_TOOLS_SCOPE        Same as --scope (global|project)
   TPM_TOOLS_BRANCH       Pin a git ref (default: main)
   OPENCODE_CONFIG_DIR    Override opencode config root (default: ~/.config/opencode)
 EOF
@@ -101,6 +104,8 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --runtime)           RUNTIME="${2:-}"; shift 2 ;;
     --runtime=*)         RUNTIME="${1#*=}"; shift ;;
+    --scope)             SCOPE="${2:-}"; shift 2 ;;
+    --scope=*)           SCOPE="${1#*=}"; shift ;;
     --non-interactive)   NON_INTERACTIVE=true; shift ;;
     --list-runtimes)     list_runtimes; exit 0 ;;
     -h|--help)           usage; exit 0 ;;
@@ -170,23 +175,50 @@ if [[ -z "$RUNTIME" ]]; then
       ;;
   esac
 
-  # Step 2 — Path
+  # Step 2 — Scope
+  printf "\n  ${BOLD}▸ Scope${RESET}\n"
+  printf "  ${CYAN}g)${RESET} global ${DIM}(all projects — default)${RESET}\n"
+  printf "  ${CYAN}p)${RESET} this project only ${DIM}(.opencode/)${RESET}\n\n"
+  read -r -p "  Choice [g]: " scope_choice < /dev/tty
+  case "${scope_choice:-g}" in
+    p|P|project) SCOPE="project" ;;
+    *)           SCOPE="global" ;;
+  esac
+
+  # Step 3 — Path (scope-aware)
   case "$RUNTIME" in
-    opencode)    DEFAULT_DIR="$HOME/.config/opencode" ;;
-    claude-code) DEFAULT_DIR="$HOME/.claude" ;;
-    copilot)     DEFAULT_DIR="$HOME/.github/copilot" ;;
-    codex)       DEFAULT_DIR="$HOME/.codex" ;;
+    opencode)
+      case "$SCOPE" in
+        project) DEFAULT_DIR="$(pwd)/.opencode" ;;
+        *)       DEFAULT_DIR="$HOME/.config/opencode" ;;
+      esac ;;
+    claude-code)
+      case "$SCOPE" in
+        project) DEFAULT_DIR="$(pwd)/.claude" ;;
+        *)       DEFAULT_DIR="$HOME/.claude" ;;
+      esac ;;
+    copilot)
+      case "$SCOPE" in
+        project) DEFAULT_DIR="$(pwd)/.github/copilot" ;;
+        *)       DEFAULT_DIR="$HOME/.github/copilot" ;;
+      esac ;;
+    codex)
+      case "$SCOPE" in
+        project) DEFAULT_DIR="$(pwd)/.codex" ;;
+        *)       DEFAULT_DIR="$HOME/.codex" ;;
+      esac ;;
   esac
   printf "\n  ${BOLD}▸ Install path${RESET}\n"
   read -r -p "  [${DEFAULT_DIR}]: " config_input < /dev/tty
   OC_ROOT="${config_input:-$DEFAULT_DIR}"
 
-  # Step 3 — Summary
+  # Step 4 — Summary
   printf "\n  ${BOLD}▸ Summary${RESET}\n"
   printf "  ${DIM}Runtime:${RESET}     ${CYAN}${RUNTIME}${RESET}\n"
+  printf "  ${DIM}Scope:${RESET}       ${CYAN}${SCOPE}${RESET}\n"
   printf "  ${DIM}Install to:${RESET}  ${CYAN}${OC_ROOT}${RESET}\n"
   printf "  ${DIM}Skills:${RESET}      59\n"
-  printf "  ${DIM}Agents:${RESET}      7  ${DIM}(pm-lead, explorer, strategist, builder, reviewer)${RESET}\n"
+  printf "  ${DIM}Agents:${RESET}      7  ${DIM}(5 in Tab, 2 subagent-only)${RESET}\n"
   printf "  ${DIM}Updates:${RESET}     ${GREEN}pm-lead checks on startup${RESET}\n\n"
   read -r -p "  Proceed? (Y/n) " confirm < /dev/tty
   if [[ "$confirm" =~ ^[Nn] ]]; then
@@ -197,14 +229,28 @@ if [[ -z "$RUNTIME" ]]; then
 
 else
   # ── Silent mode (runtime specified) ──
+  SCOPE="${SCOPE:-global}"
   OC_ROOT="${OPENCODE_CONFIG_DIR:-}"
-  case "$RUNTIME" in
-    opencode)    OC_ROOT="${OC_ROOT:-$HOME/.config/opencode}" ;;
-    claude-code) OC_ROOT="${OC_ROOT:-$HOME/.claude}" ;;
-    copilot)     OC_ROOT="${OC_ROOT:-$HOME/.github/copilot}" ;;
-    codex)       OC_ROOT="${OC_ROOT:-$HOME/.codex}" ;;
-    *)           die "Unknown runtime: '$RUNTIME'. Use --list-runtimes." ;;
-  esac
+  if [[ -z "$OC_ROOT" ]]; then
+    case "$SCOPE" in
+      project)
+        case "$RUNTIME" in
+          opencode)    OC_ROOT="$(pwd)/.opencode" ;;
+          claude-code) OC_ROOT="$(pwd)/.claude" ;;
+          copilot)     OC_ROOT="$(pwd)/.github/copilot" ;;
+          codex)       OC_ROOT="$(pwd)/.codex" ;;
+          *)           die "Unknown runtime: '$RUNTIME'." ;;
+        esac ;;
+      *)
+        case "$RUNTIME" in
+          opencode)    OC_ROOT="$HOME/.config/opencode" ;;
+          claude-code) OC_ROOT="$HOME/.claude" ;;
+          copilot)     OC_ROOT="$HOME/.github/copilot" ;;
+          codex)       OC_ROOT="$HOME/.codex" ;;
+          *)           die "Unknown runtime: '$RUNTIME'. Use --list-runtimes." ;;
+        esac ;;
+    esac
+  fi
 fi
 
 # --- Runtime configuration --------------------------------------------------
@@ -405,9 +451,9 @@ box_top
 box_title "  pm-agent-harness-kit installed!"
 box_line ""
 box_line "  Runtime:     $RUNTIME"
+box_line "  Scope:       $SCOPE"
 box_line "  Skills:      $SKILL_COUNT"
-box_line "  Agents:      $agent_count  (pm-lead, explorer, strategist, builder,"
-box_line "                              reviewer, coach, smith)"
+box_line "  Agents:      $agent_count  (5 in Tab, 2 subagent-only)"
 box_line "  Version:     $FILE_VERSION"
 box_bot
 echo ""
@@ -416,6 +462,14 @@ echo "    1. Restart $BINARY_NAME (if it was running)"
 echo "    2. $VERIFY_HINT"
 echo "    3. Ask pm-lead anything — it classifies and routes to specialist agents."
 echo ""
+
+# Project-scope gitignore hint
+if [[ "$SCOPE" == "project" ]]; then
+  yellow "  ⚠ Project-local install. Add to .gitignore:"
+  yellow "    .opencode/"
+  echo ""
+fi
+
 echo "  ${BOLD}Try:${RESET}"
 echo "    \"Write a PRD for checkout v2\""
 echo "    \"Research our churn problem\""

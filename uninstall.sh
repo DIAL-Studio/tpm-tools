@@ -10,6 +10,7 @@ set -euo pipefail
 
 REPO="DIAL-Studio/pm-agent-harness-kit"
 RUNTIME="${TPM_TOOLS_RUNTIME:-opencode}"
+SCOPE="${TPM_TOOLS_SCOPE:-global}"
 
 green()  { printf "\033[32m%s\033[0m\n" "$*"; }
 red()    { printf "\033[31m%s\033[0m\n" "$*"; }
@@ -45,6 +46,7 @@ pm-agent-harness-kit uninstaller
 
 Usage:
   ./uninstall.sh --runtime <id>
+  ./uninstall.sh --runtime <id> --scope project
   curl -fsSL .../uninstall.sh | TPM_TOOLS_RUNTIME=opencode bash
 EOF
       exit 0 ;;
@@ -56,7 +58,11 @@ done
 
 case "$RUNTIME" in
   opencode)
-    OC_ROOT="${OPENCODE_CONFIG_DIR:-$HOME/.config/opencode}"
+    if [[ "$SCOPE" == "project" ]]; then
+      OC_ROOT="${OPENCODE_CONFIG_DIR:-$(pwd)/.opencode}"
+    else
+      OC_ROOT="${OPENCODE_CONFIG_DIR:-$HOME/.config/opencode}"
+    fi
     SKILL_DIR="$OC_ROOT/skills"
     AGENT_DIR="$OC_ROOT/agents"
     VERSION_FILE="$OC_ROOT/pm-ahk.version"

@@ -1,6 +1,6 @@
 ---
 description: Validation agent — verifies evidence quality, metric readiness, and experiment design. Approves or blocks deliverables.
-mode: all
+mode: subagent
 color: "#EF4444"
 temperature: 0.1
 permission:

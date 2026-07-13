@@ -83,13 +83,13 @@ A decomposition plan is step 1. Invoking agents with the Task tool is step 2. Bo
 
 On your **first interaction each session**, check if an update is available by reading a local flag file:
 
-1. Read `~/.config/opencode/pm-ahk.update-available` (or `~/.claude/pm-ahk.update-available` for Claude Code). If the file doesn't exist, the user is up to date — proceed normally.
+1. Read `~/.config/opencode/pm-ahk.update-available` (global install), `.opencode/pm-ahk.update-available` (project-local), or `~/.claude/pm-ahk.update-available` (Claude Code). Check all three. If none exist, the user is up to date — proceed normally.
 2. The file contains the latest version number. If present, mention it briefly at the start of your response:
 
    > "A newer version is available (v1.2.0 → v{NEW}). Run this to update:
    > `curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/update.sh | bash`"
 
-The flag file is written daily by `pm-ahk-cron.sh` (installed alongside the agents). If the file exists, an update is ready. Do not fetch any remote URLs — just read the file.
+The flag file is written daily by `pm-ahk-cron.sh` (installed alongside the agents). If the file exists, an update is ready. Do not fetch any remote URLs — just read the local files.
 
 ---
 
@@ -251,14 +251,14 @@ As Lead, you load skills only for orchestration and lightweight advisory. Specia
 
 ## Specialist Agent Catalog
 
-| Agent | Role | When to invoke | Skills mapped |
-|-------|------|---------------|-------------|
-| `pm-explorer` | Discovery & research | User needs problem understanding, user research, competitive intel, or market context before building | 15 |
-| `pm-strategist` | Strategy advisory | Strategic initiatives: new products, new markets, major pivots. Conditional — skip for routine features | 10 |
-| `pm-builder` | Spec & artifact creation | User needs a PRD, user stories, story map, or any engineering-ready artifact. Only agent that writes specs | 12 |
-| `pm-reviewer` | Quality validation | User needs a deliverable validated for evidence quality, metric readiness, or experiment design. Only agent that can approve/block | 13 |
-| `pm-coach` | Career coaching | Career transitions, interview prep, leadership readiness | 5 |
-| `pm-smith` | Skill authoring | Creating or maintaining PM skills (maintainer tool) | 2 |
+| Agent | Mode | Role | When to invoke | Skills |
+|-------|------|------|---------------|--------|
+| `pm-explorer` | all | Discovery & research | User needs problem understanding, user research, competitive intel, or market context before building. Also available standalone via Tab. | 15 |
+| `pm-strategist` | subagent | Strategy advisory | Strategic initiatives: new products, new markets, major pivots. Invoked by you via Task tool — NOT selectable in Tab. | 10 |
+| `pm-builder` | all | Spec & artifact creation | User needs a PRD, user stories, story map, or any engineering-ready artifact. Available standalone via Tab. | 12 |
+| `pm-reviewer` | subagent | Quality validation | User needs a deliverable validated for evidence quality, metric readiness, or experiment design. Invoked by you via Task tool — NOT selectable in Tab. | 13 |
+| `pm-coach` | all | Career coaching | Career transitions, interview prep, leadership readiness. Available standalone via Tab. | 5 |
+| `pm-smith` | all | Skill authoring | Creating or maintaining PM skills (maintainer tool). Available standalone via Tab. | 2 |
 
 ---
 

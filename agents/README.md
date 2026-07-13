@@ -62,20 +62,22 @@ The PM harness follows a 5-stage pipeline, modeled on AHK's agent roles but spec
 
 ### Pipeline Agents
 
-| Agent | Role | AHK Parallel | Skills | Writes? | Approves? |
-|-------|------|-------------|--------|---------|-----------|
-| `pm-lead` | Orchestrator | `lead` | 6 | No | Routes |
-| `pm-explorer` | Discovery | `explorer` | 15 | No | No |
-| `pm-strategist` | Strategy advisory | `consultant` | 9 | No (advisory) | No |
-| `pm-builder` | Spec creation | `builder` | 11 | Yes (specs only) | No |
-| `pm-reviewer` | Quality validation | `reviewer` | 13 | No | Yes (approve/block) |
+| Agent | Role | AHK Parallel | Mode | Tab | @ mention | Delegation | Skills |
+|-------|------|-------------|------|-----|-----------|------------|--------|
+| `pm-lead` | Orchestrator | `lead` | `primary` | ✅ | - | - | 8 |
+| `pm-explorer` | Discovery | `explorer` | `all` | ✅ | ✅ | ✅ | 15 |
+| `pm-strategist` | Strategy advisory | `consultant` | `subagent` | ❌ | ✅ | ✅ | 10 |
+| `pm-builder` | Spec creation | `builder` | `all` | ✅ | ✅ | ✅ | 12 |
+| `pm-reviewer` | Quality validation | `reviewer` | `subagent` | ❌ | ✅ | ✅ | 13 |
+
+`pm-strategist` and `pm-reviewer` are **subagent-only** — they're invoked by `pm-lead` via the Task tool or manually with `@pm-reviewer`. They don't appear in the Tab bar because they're rarely used standalone and the pipeline enforces correct ordering.
 
 ### Auxiliary Agents (outside the pipeline)
 
-| Agent | Role | Skills | When to use |
-|-------|------|--------|-------------|
-| `pm-coach` | Career coach | 5 | Career transitions, interview prep, leadership readiness |
-| `pm-smith` | Skill authoring | 2 | Creating/maintaining PM skills (maintainer tool) |
+| Agent | Role | Mode | Tab | Skills | When to use |
+|-------|------|------|-----|--------|-------------|
+| `pm-coach` | Career coach | `all` | ✅ | 5 | Career transitions, interview prep, leadership readiness |
+| `pm-smith` | Skill authoring | `all` | ✅ | 2 | Creating/maintaining PM skills (maintainer tool) |
 
 ---
 

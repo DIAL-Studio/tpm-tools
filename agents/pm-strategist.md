@@ -1,6 +1,6 @@
 ---
 description: Strategy agent — advises on positioning, market sizing, and roadmap tradeoffs. Invoked conditionally for strategic initiatives.
-mode: all
+mode: subagent
 color: "#F59E0B"
 temperature: 0.2
 permission:

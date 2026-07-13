@@ -29,25 +29,23 @@
 
 set -euo pipefail
 
-# Try both opencode and claude-code config paths
-OC_ROOT="${OPENCODE_CONFIG_DIR:-$HOME/.config/opencode}"
-CC_ROOT="$HOME/.claude"
+# Try all possible config paths: global opencode, project-local opencode, claude-code
+OC_GLOBAL="$HOME/.config/opencode"
+OC_PROJECT="$(pwd)/.opencode"
+CC_GLOBAL="$HOME/.claude"
+CC_PROJECT="$(pwd)/.claude"
 
 LOCAL_VERSION_FILE=""
 REMOTE_VERSION_URL="https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/VERSION"
 UPDATE_FLAG=""
 
-# Pick the right config root based on which one has a version file
-if [[ -f "$OC_ROOT/pm-ahk.version" ]]; then
-  LOCAL_VERSION_FILE="$OC_ROOT/pm-ahk.version"
-  UPDATE_FLAG="$OC_ROOT/pm-ahk.update-available"
-elif [[ -f "$CC_ROOT/pm-ahk.version" ]]; then
-  LOCAL_VERSION_FILE="$CC_ROOT/pm-ahk.version"
-  UPDATE_FLAG="$CC_ROOT/pm-ahk.update-available"
-else
-  # Not installed — exit silently
-  exit 0
-fi
+for dir in "$OC_GLOBAL" "$OC_PROJECT" "$CC_GLOBAL" "$CC_PROJECT"; do
+  if [[ -f "$dir/pm-ahk.version" ]]; then
+    LOCAL_VERSION_FILE="$dir/pm-ahk.version"
+    UPDATE_FLAG="$dir/pm-ahk.update-available"
+    break
+  fi
+done
 
 LOCAL_VERSION="$(cat "$LOCAL_VERSION_FILE" | tr -d '[:space:]')"
 REMOTE_VERSION="$(curl -fsSL --connect-timeout 5 "$REMOTE_VERSION_URL" 2>/dev/null | tr -d '[:space:]' || true)"

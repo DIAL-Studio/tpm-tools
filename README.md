@@ -171,6 +171,16 @@ curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/ma
 
 **After install:** Restart your AI runtime and open `pm-lead` to start.
 
+### Project-local install (single project only)
+
+Installs to `.opencode/` in the current directory instead of globally. Agents and skills only affect this project.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/DIAL-Studio/pm-agent-harness-kit/main/install.sh | TPM_TOOLS_SCOPE=project bash
+```
+
+The TUI prompts for scope before path. Silence mode: `TPM_TOOLS_SCOPE=project TPM_TOOLS_RUNTIME=opencode`. Add `.opencode/` to your `.gitignore`.
+
 ### Silent (for scripts or when you know your runtime)
 
 **opencode:**
