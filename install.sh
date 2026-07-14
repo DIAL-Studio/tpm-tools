@@ -473,17 +473,33 @@ if $WITH_MCP; then
         python3 <<- PYEOF
 import json
 cfg = json.load(open("${OC_ROOT}/opencode.json"))
-cfg.setdefault("mcpServers", {})["pm-ahk"] = {
-    "command": "python3",
-    "args": ["${OC_ROOT}/pm-ahk.py", "serve", "--db", "${OC_ROOT}/.harness/harness.db"]
+cfg.setdefault("mcp", {})["pm-ahk"] = {
+    "type": "local",
+    "command": ["python3", "${OC_ROOT}/pm-ahk.py", "serve", "--db", "${OC_ROOT}/.harness/harness.db"],
+    "enabled": True
 }
-json.dump(cfg, open("${OC_ROOT}/opencode.json", "w"), indent=4)
+json.dump(cfg, open("${OC_ROOT}/opencode.json", "w"), indent=2)
 PYEOF
         green "  MCP server registered in opencode.json"
       fi
 
+      # Register MCP server for Claude Code (~/.claude.json)
+      CC_CFG="$HOME/.claude.json"
+      if [[ "$RUNTIME" == "claude-code" || ! -f "$OC_ROOT/opencode.json" ]]; then
+        python3 <<- PYEOF
+import json, os
+path = os.path.expanduser("~/.claude.json")
+cfg = json.load(open(path)) if os.path.exists(path) else {}
+cfg.setdefault("mcpServers", {})["pm-ahk"] = {
+    "command": "python3",
+    "args": ["${OC_ROOT}/pm-ahk.py", "serve", "--db", "${OC_ROOT}/.harness/harness.db"]
+}
+json.dump(cfg, open(path, "w"), indent=2)
+PYEOF
+        green "  MCP server registered for Claude Code (~/.claude.json)"
+      fi
+
       green "  MCP harness installed"
-      dim "  Run '$OC_ROOT/pm-ahk status' to see the backlog"
       dim "  Run '$OC_ROOT/pm-ahk status' to see the backlog"
     else
     yellow "  Python 3.8+ required for MCP harness. Found: $(python3 --version 2>/dev/null || echo 'not found')"
