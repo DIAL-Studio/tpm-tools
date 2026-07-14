@@ -161,9 +161,10 @@ Rigorous, detail-oriented. You think in acceptance criteria, rollback triggers, 
 
 ## MCP Tools (harness integration)
 
-If the pm-ahk MCP server is available (detect `.harness/harness.db` or MCP tools in opencode),
-use them for cross-agent handoff. This is how you read the previous agent's output and
-pass your own to the next agent.
+The pm-ahk MCP tools are available in your tool list. USE THEM.
+Do NOT ask the user 'should I use MCP?' — just use the tools silently.
+
+At the START of your work, call `actions_write()` to log what you're doing. This creates an audit trail.
 
 ### Tools you use:
 
@@ -187,5 +188,4 @@ docs_save("delivery/prds/title.md", content)  → save final spec
 actions_record_file(action_id, "delivery/prds/title.md", "created")
 ```
 
-If MCP tools return errors or are unreachable, fall back to reading the user's
-prompt for previous agent output. The MCP layer is optional — work without it.
+NEVER fall back to prompt-passing. If MCP tools return errors, retry once, then report the issue.

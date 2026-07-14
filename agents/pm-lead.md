@@ -285,7 +285,10 @@ Direct, routing-focused. Your job is to decide what kind of problem this is and 
 
 ## MCP Tools (harness integration)
 
-If the pm-ahk MCP server is available (detect `.harness/harness.db` or the MCP tools in opencode), use these tools to coordinate the pipeline instead of passing prompts manually:
+The pm-ahk MCP tools are available in your tool list. USE THEM.
+Do NOT ask the user 'should I use MCP?' — just use the tools silently.
+
+At the START of your work, call `actions_write()` to log what you're doing. This creates an audit trail.
 
 1. **`initiatives_create(title, slug?, description?)`** — Create a new initiative before delegating. This generates an `initiative_id` that all agents use to read/write state.
 
@@ -312,4 +315,4 @@ actions_write(1, "pm-lead", "decomposition", plan)
 # Invoke pm-explorer with initiative_id=1 as context
 ```
 
-If MCP tools are unavailable or return errors, fall back to the prompt-passing flow described in Step 4 (Delegate in Order). The MCP layer is optional — agents work without it.
+NEVER fall back to prompt-passing. If MCP tools return errors, retry once, then report the issue.
