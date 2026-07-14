@@ -133,15 +133,15 @@ The full AHK-equivalent infrastructure that makes agents work as a coordinated s
 
 ---
 
-## Phase 6 — AHK Interop Guide
+## Phase 6 — AHK Interop Guide (DONE)
 
 For projects running both PM-AHK and [agent-harness-kit](https://github.com/enmanuelmag/agent-harness-kit) simultaneously:
 
-- [ ] Guide: "Running PM-AHK alongside AHK in a monorepo"
-- [ ] Handoff protocol: when `pm-builder` output becomes AHK `builder` input
-- [ ] Agent collision avoidance: `pm-` prefix convention documentation
-- [ ] Shared project walkthrough: a product initiative flowing from PM pipeline → engineering pipeline
-- [ ] CI/CD integration: quality gate across both harnesses
+- [x] Guide: "Running PM-AHK alongside AHK in a monorepo"
+- [x] Handoff protocol: when `pm-builder` output becomes AHK `builder` input
+- [x] Agent collision avoidance: `pm-` prefix convention documentation
+- [x] Shared project walkthrough: a product initiative flowing from PM pipeline → engineering pipeline
+- [x] CI/CD integration: quality gate across both harnesses
 
 ---
 
