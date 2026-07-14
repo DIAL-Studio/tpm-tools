@@ -467,7 +467,23 @@ if $WITH_MCP; then
 
       # Initialize harness
       python3 "$OC_ROOT/pm-ahk.py" init --scope "$SCOPE" 2>&1 | tail -n +2
+
+      # Register MCP server in opencode.json
+      if [[ "$RUNTIME" == "opencode" && -f "$OC_ROOT/opencode.json" ]]; then
+        python3 <<- PYEOF
+import json
+cfg = json.load(open("${OC_ROOT}/opencode.json"))
+cfg.setdefault("mcpServers", {})["pm-ahk"] = {
+    "command": "python3",
+    "args": ["${OC_ROOT}/pm-ahk.py", "serve", "--db", "${OC_ROOT}/.harness/harness.db"]
+}
+json.dump(cfg, open("${OC_ROOT}/opencode.json", "w"), indent=4)
+PYEOF
+        green "  MCP server registered in opencode.json"
+      fi
+
       green "  MCP harness installed"
+      dim "  Run '$OC_ROOT/pm-ahk status' to see the backlog"
       dim "  Run '$OC_ROOT/pm-ahk status' to see the backlog"
     else
     yellow "  Python 3.8+ required for MCP harness. Found: $(python3 --version 2>/dev/null || echo 'not found')"
