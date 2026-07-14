@@ -30,7 +30,7 @@ from pathlib import Path
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-VERSION = "1.9.2"
+VERSION = "2.0.0"
 REPO_OWNER = "DIAL-Studio"
 REPO_NAME = "pm-agent-harness-kit"
 REMOTE_URL = f"https://raw.githubusercontent.com/{REPO_OWNER}/{REPO_NAME}/main"
@@ -357,9 +357,16 @@ def cmd_serve(db_path: str | Path) -> None:
             tool_args = params.get("arguments", {})
             try:
                 result = handle_tool_call(conn, tool_name.replace("_", "."), tool_args)
-                mcp_send({"jsonrpc": "2.0", "result": result, "id": req_id})
+                # MCP format: wrap in content[{type:text, text:json_string}]
+                mcp_send({"jsonrpc": "2.0", "result": {
+                    "content": [{"type": "text", "text": json.dumps(result)}]
+                }, "id": req_id})
             except Exception as e:
-                mcp_send({"jsonrpc": "2.0", "error": {"code": -32000, "message": str(e)}, "id": req_id})
+                # Error format: content with isError flag
+                mcp_send({"jsonrpc": "2.0", "result": {
+                    "content": [{"type": "text", "text": str(e)}],
+                    "isError": True
+                }, "id": req_id})
 
         elif method == "notifications/initialized":
             pass
