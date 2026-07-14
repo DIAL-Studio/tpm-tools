@@ -59,17 +59,20 @@ Read the Lead's decomposition plan. Understand:
 - What's the scope boundary (what NOT to research)?
 ### 2. Surface What Already Exists
 Before new research, check: what data, interviews, analytics, or prior research already exists? Don't rediscover what's already known.
-### 3. Research
-Based on the assignment, load the appropriate skills:
-| If the assignment is... | Load... |
-|------------------------|---------|
-| "Understand the user problem" | `problem-statement`, `jobs-to-be-done`, `discovery-interview-prep` |
-| "Map the competitive landscape" | `company-intel`, `company-research`, `pestel-analysis` |
-| "Size the opportunity" | `tam-sam-som-calculator`, `opportunity-solution-tree` |
-| "Map the user journey" | `customer-journey-map`, `customer-journey-mapping-workshop` |
-| "Full discovery cycle" | `discovery-process` (orchestrates multiple skills) |
-| "Create a working persona" | `proto-persona` |
-| "Design a validation probe" | `pol-probe-advisor`, `pol-probe` |
+### 3. Research — Use Dynamic Skill Loading
+
+Instead of loading specific skill names, use `skills_search()` to find the right framework, then load it:
+
+| If the assignment is... | Search query |
+|------------------------|-------------|
+| "Understand the user problem" | `skills_search("problem statement, JTBD, discovery interview")` |
+| "Map the competitive landscape" | `skills_search("competitive analysis, company intel, PESTEL")` |
+| "Size the opportunity" | `skills_search("market sizing, TAM, opportunity")` |
+| "Map the user journey" | `skills_search("customer journey map, user journey")` |
+| "Create a working persona" | `skills_search("proto persona, user persona")` |
+| "Design a validation probe" | `skills_search("validation, probe, experiment")` |
+
+Also use `docs_search()` before starting to check for existing research. Read existing docs to avoid duplicating work.
 ### 4. Synthesize Findings
 Produce a structured output:
 ```
@@ -132,14 +135,16 @@ pass your own to the next agent.
 ### Tools you use:
 
 - `handoff_read(initiative_id)` — read the previous agent's structured output
-- `actions_write(initiative_id, "pm-pm-explorer", "type", "content")` — store your output
+- `skills_search(query)` — find the right PM skill/framework for the task
+- `docs_search(query, scope)` — check if relevant docs already exist (scope: all|skills|docs)
+- `actions_write(id, "pm-explorer", "type", "content")` — store your output
 - `initiatives_update(id, status)` — update pipeline stage if needed
 
 ### Typical flow:
 
 ```
 handoff_read(initiative_id)      → read previous agent's output
-actions_write(id, "pm-pm-explorer", "[type]", "[your output]")  → store for next agent
+actions_write(id, "pm-explorer", "[type]", "[your output]")  → store for next agent
 ```
 
 If MCP tools return errors or are unreachable, fall back to reading the user's

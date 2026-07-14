@@ -291,17 +291,23 @@ If the pm-ahk MCP server is available (detect `.harness/harness.db` or the MCP t
 
 2. **`initiatives_claim(id)`** — Claim the initiative atomically. Prevents two sessions from working the same initiative.
 
-3. **`actions_write(initiative_id, agent, action_type, content)`** — Log your decomposition plan as an action. The next agent reads it with `handoff_read(initiative_id)`.
+3. **`docs_search(query, scope?)`** — Before delegating, check if relevant docs already exist. Use scope="docs" to search only project docs, "skills" for PM frameworks, or "all" for both.
 
-4. **`initiatives_update(id, status)`** — Update pipeline stage (pending → discovery → spec → review → approved/done).
+4. **`skills_search(query)`** — Find the right PM skill/framework for the task when the Skill tool isn't available.
 
-5. **`handoff_read(initiative_id)`** — Not typically used by lead (you're the first agent), but useful to check the previous action if resuming a session.
+5. **`actions_write(initiative_id, agent, action_type, content)`** — Log your decomposition plan as an action. The next agent reads it with `handoff_read(initiative_id)`.
+
+6. **`initiatives_update(id, status)`** — Update pipeline stage (pending → discovery → spec → review → approved/done).
+
+7. **`handoff_read(initiative_id)`** — Not typically used by lead (you're the first agent), but useful to check the previous action if resuming a session.
 
 **Flow with MCP:**
 
 ```
 initiatives_create("Checkout v2")          → { id: 1 }
 initiatives_claim(1)                       → claimed
+docs_search("checkout v2")                 → check existing work
+skills_search("prioritization framework")  → if lightweight query
 actions_write(1, "pm-lead", "decomposition", plan)
 # Invoke pm-explorer with initiative_id=1 as context
 ```

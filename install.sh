@@ -499,6 +499,13 @@ PYEOF
       fi
 
       green "  MCP harness installed (stdio — auto-started by AI runtime)"
+
+      # Create PM docs directory structure
+      DOCS_DIR="$OC_ROOT/pm-ahk-docs"
+      if [[ ! -d "$DOCS_DIR" ]]; then
+        mkdir -p "$DOCS_DIR"/{discovery/{problem-statements,personas,journey-maps},strategy/{positioning,market-analysis},delivery/{prds,user-stories},validation/{experiments,metrics-reports},decisions,stakeholders}
+        green "  PM docs structure created: $DOCS_DIR/"
+      fi
     else
     yellow "  Python 3.8+ required for MCP harness. Found: $(python3 --version 2>/dev/null || echo 'not found')"
     fi

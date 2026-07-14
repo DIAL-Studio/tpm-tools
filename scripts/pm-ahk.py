@@ -57,6 +57,25 @@ def dim(s): return f"{DIM}{s}{RESET}"
 def magenta(s): return f"{MAGENTA}{s}{RESET}"
 
 
+# ── Docs path helper ─────────────────────────────────────────────────────────
+
+def docs_dir() -> Path:
+    """Resolve the PM docs directory (global or repo)."""
+    base = Path(__file__).resolve().parent
+    # Installed in ~/.config/opencode/
+    installed = base / "pm-ahk-docs"
+    if installed.exists():
+        return installed
+    # Installed in ~/.claude/ or similar
+    if base.parent.name != "opencode" and base.parent.name != "skls":
+        return installed
+    # Repo root fallback
+    repo = base.parent / "pm-ahk-docs"
+    if not repo.exists():
+        repo.mkdir(parents=True, exist_ok=True)
+    return repo
+
+
 # ── DB Path resolution ───────────────────────────────────────────────────────
 
 def resolve_db_path(scope: str = "global", cwd: str | None = None) -> Path:
@@ -415,7 +434,7 @@ def handle_tool_call(conn: sqlite3.Connection, tool: str, args: dict) -> dict | 
         results = []
         if skills_dir.exists():
             for skill_dir in skills_dir.iterdir():
-                if not skill_dir.is_dir() or skill_dir.name.startswith("."):
+                if not skill_dir.is_dir() or skill_dir.name.startswith(".") or ".bak" in skill_dir.name:
                     continue
                 skill_md = skill_dir / "SKILL.md"
                 if skill_md.exists():
@@ -427,7 +446,51 @@ def handle_tool_call(conn: sqlite3.Connection, tool: str, args: dict) -> dict | 
                                 desc = line.split(":", 1)[1].strip()
                                 break
                         results.append({"name": skill_dir.name, "description": desc})
-        return results[:20]  # max 20 results
+        return results[:20]
+
+    elif tool == "docs.search":
+        query = args.get("query", "")
+        scope = args.get("scope", "all")  # 'all', 'skills', 'docs'
+        results = []
+        if scope in ("all", "skills"):
+            base = Path(__file__).resolve().parent
+            sd = base / "skills"
+            if not sd.exists():
+                sd = base.parent / "skills"
+            if sd.exists():
+                for dir_entry in sd.iterdir():
+                    if not dir_entry.is_dir() or dir_entry.name.startswith(".") or ".bak" in dir_entry.name:
+                        continue
+                    sm = dir_entry / "SKILL.md"
+                    if sm.exists() and query.lower() in sm.read_text().lower():
+                        desc = ""
+                        for line in sm.read_text().split("\n"):
+                            if line.startswith("description:"):
+                                desc = line.split(":", 1)[1].strip()
+                                break
+                        results.append({"source": "skill", "name": dir_entry.name, "description": desc})
+        if scope in ("all", "docs"):
+            dd = docs_dir()
+            if dd.exists():
+                for md_file in dd.rglob("*.md"):
+                    if md_file.is_file() and query.lower() in md_file.read_text().lower():
+                        rel = md_file.relative_to(dd)
+                        results.append({"source": "doc", "path": str(rel)})
+        return results[:20]
+
+    elif tool == "docs.save":
+        path = args.get("path", "")
+        content = args.get("content", "")
+        if not path or not content:
+            return {"error": "path and content are required"}
+        # Validate path stays within docs dir
+        dd = docs_dir()
+        full = (dd / path).resolve()
+        if not str(full).startswith(str(dd.resolve())):
+            return {"error": "path escapes docs directory"}
+        full.parent.mkdir(parents=True, exist_ok=True)
+        full.write_text(content)
+        return {"path": str(full), "size": len(content)}  # max 20 results
 
     elif tool == "pmahk.doctor":
         lib_version = VERSION
@@ -515,8 +578,18 @@ MCP_TOOLS = [
          "action_id": {"type": "integer"}, "tool_name": {"type": "string"},
          "args_json": {"type": "string"}, "result_summary": {"type": "string"}},
      "required": ["action_id", "tool_name"]}},
-    {"name": "skills_search", "description": "Search the PM skills library",
-     "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
+     {"name": "skills_search", "description": "Search the PM skills library",
+      "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}},
+     {"name": "docs_search", "description": "Search project PM docs + skills (type: all|skills|docs)",
+      "inputSchema": {"type": "object", "properties": {
+          "query": {"type": "string", "description": "Search term"},
+          "scope": {"type": "string", "description": "all|skills|docs (default: all)"}},
+      "required": ["query"]}},
+     {"name": "docs_save", "description": "Save a validated document to the PM docs directory",
+      "inputSchema": {"type": "object", "properties": {
+          "path": {"type": "string", "description": "Relative path (e.g. delivery/prds/checkout-v2.md)"},
+          "content": {"type": "string", "description": "Document content"}},
+      "required": ["path", "content"]}},
     {"name": "pmahk_doctor", "description": "Check harness version, agent files, and skills sync status",
      "inputSchema": {"type": "object", "properties": {}}},
  ]

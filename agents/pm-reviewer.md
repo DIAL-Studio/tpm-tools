@@ -153,14 +153,22 @@ pass your own to the next agent.
 ### Tools you use:
 
 - `handoff_read(initiative_id)` — read the previous agent's structured output
-- `actions_write(initiative_id, "pm-pm-reviewer", "type", "content")` — store your output
-- `initiatives_update(id, status)` — update pipeline stage if needed
+- `skills_search(query)` — find the right validation/expert framework
+- `docs_search(query, scope)` — read the spec to be validated from docs
+- `actions_write(initiative_id, "pm-reviewer", "type", "content")` — store your review
+- `criteria_add(initiative_id, criterion)` — add acceptance criteria
+- `criteria_check(id)` — mark criteria as met
+- `initiatives_update(id, status)` — update pipeline stage (approved | blocked)
 
 ### Typical flow:
 
 ```
-handoff_read(initiative_id)      → read previous agent's output
-actions_write(id, "pm-pm-reviewer", "[type]", "[your output]")  → store for next agent
+handoff_read(initiative_id)         → read builder's spec
+docs_search("delivery/prds/*")      → read full saved spec
+skills_search("validation, metrics, experiments")  → find right framework
+actions_write(id, "pm-reviewer", "review", verdict)
+criteria_add(id, "guardrail metric defined")
+criteria_check(id)
 ```
 
 If MCP tools return errors or are unreachable, fall back to reading the user's

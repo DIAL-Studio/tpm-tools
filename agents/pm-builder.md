@@ -67,17 +67,24 @@ If any of these are missing, flag to the Lead before proceeding:
 - Decision this artifact will inform
 > "Before I write the PRD, I need: (1) a validated problem statement from Explorer, (2) target persona definition, (3) clarity on whether we're optimizing for speed or completeness. The Explorer can provide (1) and (2). The Lead needs to clarify (3)."
 ### 3. Build the Artifact
-Load the appropriate skill based on the assignment:
-| If the assignment is... | Load... |
-|------------------------|---------|
-| "Write a PRD" | `prd-development` (8-phase structured), `tpm-artifacts` (quick templates) |
-| "Create user stories" | `user-story`, `user-story-splitting` |
-| "Map the user journey as stories" | `user-story-mapping`, `user-story-mapping-workshop` |
-| "Break down an epic" | `epic-hypothesis`, `epic-breakdown-advisor` |
-| "Write a press release" | `press-release` |
-| "Create a storyboard" | `storyboard` |
-| "Write an EOL announcement" | `eol-message` |
-| "Quick PRD/one-pager template" | `tpm-artifacts` |
+
+Use `skills_search()` to find the right skill/format, then load it:
+
+| If the assignment is... | Search query |
+|------------------------|-------------|
+| "Write a PRD" | `skills_search("PRD, product requirements, specification")` |
+| "Create user stories" | `skills_search("user story, story splitting, epic breakdown")` |
+| "Map a journey as stories" | `skills_search("story mapping, user journey")` |
+| "Write a press release" | `skills_search("press release, PR/FAQ, announcement")` |
+| "Create a storyboard" | `skills_search("storyboard, 6-frame")` |
+| "Quick template" | `skills_search("template, artifact, PM template")` |
+
+Also use `docs_search()` before writing to check for existing evidence (from Explorer) and `docs_save()` after approval to save the final spec:
+
+```
+# After producing the deliverable AND the reviewer approves:
+docs_save("delivery/prds/checkout-v2.md", content)
+```
 ### 4. Produce the Deliverable
 Every artifact must include:
 ```
@@ -161,14 +168,23 @@ pass your own to the next agent.
 ### Tools you use:
 
 - `handoff_read(initiative_id)` — read the previous agent's structured output
-- `actions_write(initiative_id, "pm-pm-builder", "type", "content")` — store your output
+- `skills_search(query)` — find the right PM skill/framework
+- `docs_search(query)` — check for existing evidence from Explorer
+- `docs_save(path, content)` — save approved specs to the PM docs directory
+- `actions_write(initiative_id, "pm-builder", "type", "content")` — store your output
+- `actions_record_file(action_id, file_path, operation)` — register artifacts created
 - `initiatives_update(id, status)` — update pipeline stage if needed
 
-### Typical flow:
+### Typical workflow:
 
 ```
-handoff_read(initiative_id)      → read previous agent's output
-actions_write(id, "pm-pm-builder", "[type]", "[your output]")  → store for next agent
+handoff_read(initiative_id)         → read evidence from Explorer
+skills_search("PRD, specification") → find the right skill
+docs_search("checkout v2")          → check existing docs
+actions_write(id, "pm-builder", "spec", "content")
+→ (on reviewer approval) →
+docs_save("delivery/prds/title.md", content)  → save final spec
+actions_record_file(action_id, "delivery/prds/title.md", "created")
 ```
 
 If MCP tools return errors or are unreachable, fall back to reading the user's
