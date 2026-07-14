@@ -21,6 +21,7 @@ import datetime
 import http.server
 import json
 import os
+import select
 import sqlite3
 import socketserver
 import sys
@@ -208,17 +209,29 @@ def init_db(db_path: str | Path) -> None:
 
 # ── MCP Protocol (JSON-RPC over stdio, binary I/O) ───────────────────────────
 
+def _read_fd(n: int = 1) -> bytes | None:
+    """Read n bytes from stdin, handling EAGAIN/EWOULDBLOCK."""
+    while True:
+        try:
+            data = os.read(0, n)
+            return data
+        except BlockingIOError:
+            select.select([0], [], [], 0.1)
+        except OSError:
+            return None
+
+
 def mcp_read() -> dict | None:
     """Read a JSON-RPC message from stdin (via os.read for unbuffered I/O)."""
     try:
         header = b""
         while True:
-            ch = os.read(0, 1)  # unbuffered read from fd 0
-            if not ch:
+            ch = _read_fd()
+            if ch is None or ch == b"":
                 return None
             if ch in (b"\r", b"\n"):
                 if ch == b"\r":
-                    os.read(0, 1)
+                    _read_fd()
                 break
             header += ch
 
@@ -227,19 +240,23 @@ def mcp_read() -> dict | None:
 
         length = int(header.split(b":")[1].strip())
         # Consume blank line
-        blank = os.read(0, 1)
+        blank = _read_fd()
+        if blank is None:
+            return None
         if blank == b"\r":
-            os.read(0, 1)
+            _read_fd()
         # Read exactly N bytes
         body = b""
         while len(body) < length:
-            chunk = os.read(0, length - len(body))
-            if not chunk:
+            chunk = _read_fd(length - len(body))
+            if chunk is None or chunk == b"":
                 return None
             body += chunk
 
         return json.loads(body.decode("utf-8"))
-    except Exception:
+    except Exception as exc:
+        sys.stderr.write(f"[pm-ahk] mcp_read error: {exc}\n")
+        sys.stderr.flush()
         return None
 
 
