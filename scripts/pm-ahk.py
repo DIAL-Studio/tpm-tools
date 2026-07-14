@@ -632,6 +632,7 @@ def main() -> None:
     init_p = sub.add_parser("init", help="Initialize harness database")
     init_p.add_argument("--scope", choices=["global", "project"], default="global",
                         help="Install scope (default: global)")
+    init_p.add_argument("--db", help="Path to harness.db")
     status_p = sub.add_parser("status", help="Show initiative backlog")
     status_p.add_argument("--db", help="Path to harness.db")
     dash_p = sub.add_parser("dashboard", help="Start local web dashboard")
@@ -652,7 +653,7 @@ def main() -> None:
         return
 
     # Resolve DB path
-    if opts.db:
+    if getattr(opts, 'db', None):
         db_path = Path(opts.db)
     else:
         # Try project-local first, then global
