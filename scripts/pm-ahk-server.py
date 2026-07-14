@@ -78,9 +78,25 @@ def get_conn():
     return _ahk.get_conn(DB_PATH)
 
 
-@app.route("/sse")
-def sse():
-    """SSE endpoint — opencode connects here first."""
+@app.route("/", methods=["GET", "POST"])
+@app.route("/sse", methods=["GET"])
+def root():
+    """Root endpoint — SSE for GET, JSON-RPC for POST."""
+    if flask.request.method == "POST":
+        return handle_mcp_request()
+    
+    # GET: SSE endpoint (at root or /sse)
+    return sse_stream()
+
+
+@app.route("/message", methods=["POST"])
+def message():
+    """MCP message endpoint — receives JSON-RPC, sends response via SSE."""
+    return handle_mcp_request()
+
+
+def sse_stream():
+    """Establish SSE connection and return endpoint URL."""
     session_id = str(uuid.uuid4())
     q: queue.Queue = queue.Queue()
 
@@ -118,15 +134,11 @@ def sse():
     return response
 
 
-@app.route("/message", methods=["POST"])
-def message():
-    """MCP message endpoint — receives JSON-RPC, sends response via SSE."""
+def handle_mcp_request():
+    """Handle JSON-RPC MCP request — responds directly or via SSE."""
     session_id = flask.request.args.get("session_id")
-    if not session_id:
-        return flask.jsonify({"jsonrpc": "2.0", "error": {"code": -32600, "message": "missing session_id"},
-                              "id": None}), 400
-
     data = flask.request.get_json(silent=True)
+
     if not data or "method" not in data:
         return flask.jsonify({"jsonrpc": "2.0", "error": {"code": -32600, "message": "Invalid request"},
                               "id": data.get("id") if data else None}), 400
@@ -136,25 +148,34 @@ def message():
     req_id = data.get("id")
 
     try:
+        result = None
         if method == "initialize":
             result = {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}}
-            _send_response(session_id, result, req_id)
         elif method == "tools/list":
             result = {"tools": MCP_TOOLS}
-            _send_response(session_id, result, req_id)
         elif method == "tools/call":
-            tool_name = params.get("name", "")
-            tool_args = params.get("arguments", {})
-            result = _handle_tool_call(tool_name.replace("_", "."), tool_args)
-            _send_response(session_id, result, req_id)
-        elif method == "notifications/initialized":
-            pass  # no response needed
+            result = _handle_tool_call(params.get("name", "").replace("_", "."), params.get("arguments", {}))
+        elif method in ("notifications/initialized", "notifications/cancelled"):
+            return flask.Response(status=202)
         else:
-            _send_error(session_id, -32601, f"method not found: {method}", req_id)
-    except Exception as e:
-        _send_error(session_id, -32000, str(e), req_id)
+            return flask.jsonify({"jsonrpc": "2.0", "error": {"code": -32601, "message": f"method not found: {method}"},
+                                  "id": req_id}), 404
 
-    return flask.jsonify({"status": "ok"}), 202
+        if result is not None:
+            # Send response via SSE if we have a session_id, otherwise respond directly
+            if session_id:
+                _send_response(session_id, result, req_id)
+                return flask.Response(status=202)
+            else:
+                return flask.jsonify({"jsonrpc": "2.0", "result": result, "id": req_id}), 200
+    except Exception as e:
+        if session_id:
+            _send_error(session_id, -32000, str(e), req_id)
+            return flask.Response(status=202)
+        return flask.jsonify({"jsonrpc": "2.0", "error": {"code": -32000, "message": str(e)},
+                              "id": req_id}), 500
+
+    return flask.Response(status=202)
 
 
 def _send_response(session_id: str, result: dict, req_id: int | None) -> None:
