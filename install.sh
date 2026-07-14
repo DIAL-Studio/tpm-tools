@@ -450,23 +450,32 @@ green "  Version: $FILE_VERSION"
 # --- MCP Harness (Phase 5) ---------------------------------------------------
 
 if $WITH_MCP; then
-  if has python3; then
-    PY_VER="$(python3 --version 2>/dev/null | cut -d' ' -f2 | cut -d. -f1)"
-    if [[ "$PY_VER" -ge 3 ]]; then
-      # Copy MCP scripts
-      mkdir -p "$OC_ROOT"
-      cp "$EXTRACTED_DIR/scripts/pm-ahk.py" "$OC_ROOT/pm-ahk.py"
-      cp "$EXTRACTED_DIR/scripts/pm-ahk" "$OC_ROOT/pm-ahk"
-      chmod +x "$OC_ROOT/pm-ahk" "$OC_ROOT/pm-ahk.py"
+  if has node && has npm; then
+    # Build the TypeScript MCP server
+    PM_AHK_SRC="$EXTRACTED_DIR/scripts/pm-ahk"
+    PM_AHK_DST="$OC_ROOT/pm-ahk"
+    if [[ -d "$PM_AHK_SRC" ]]; then
+      mkdir -p "$PM_AHK_DST"
+      # Copy full source, install deps, and build
+      cp -r "$PM_AHK_SRC/"* "$PM_AHK_DST/"
+      (cd "$PM_AHK_DST" && npm ci --silent 2>/dev/null && npm run build --silent 2>/dev/null) || {
+        yellow "  npm build failed — will use pre-built if available"
+      }
+      # Remove node_modules (not needed at runtime with pre-built dist)
+      rm -rf "$PM_AHK_DST/node_modules"
+      MCP_CMD="node"
+      MCP_ARGS="[\"${PM_AHK_DST}/bin/pm-ahk.js\", \"serve\", \"--db\", \"${OC_ROOT}/.harness/harness.db\"]"
+    else
+      yellow "  scripts/pm-ahk/ not found in archive — MCP server not installed"
+      MCP_CMD=""
+    fi
 
+    if [[ -n "$MCP_CMD" ]]; then
       # Copy dashboard dist/
       if [[ -d "$EXTRACTED_DIR/dashboard/dist" ]]; then
         mkdir -p "$OC_ROOT/pm-ahk-dashboard"
         cp -r "$EXTRACTED_DIR/dashboard/dist/"* "$OC_ROOT/pm-ahk-dashboard/"
       fi
-
-      # Initialize harness (quiet — config snippet not needed, install handles it)
-      python3 "$OC_ROOT/pm-ahk.py" init --scope "$SCOPE" 2>&1 >/dev/null
 
       # Register MCP server in opencode.json (stdio, type: local)
       if [[ "$RUNTIME" == "opencode" && -f "$OC_ROOT/opencode.json" ]]; then
@@ -475,7 +484,7 @@ import json
 cfg = json.load(open("${OC_ROOT}/opencode.json"))
 cfg.setdefault("mcp", {})["pm-ahk"] = {
     "type": "local",
-    "command": ["python3", "-u", "${OC_ROOT}/pm-ahk.py", "serve"],
+    "command": ${MCP_ARGS},
     "enabled": True
 }
 json.dump(cfg, open("${OC_ROOT}/opencode.json", "w"), indent=2)
@@ -485,17 +494,17 @@ PYEOF
 
       # Register MCP server for Claude Code (~/.claude.json)
       if [[ "$RUNTIME" == "claude-code" || ! -f "$OC_ROOT/opencode.json" ]]; then
-        python3 <<- PYEOF
-import json, os
-path = os.path.expanduser("~/.claude.json")
-cfg = json.load(open(path)) if os.path.exists(path) else {}
-cfg.setdefault("mcpServers", {})["pm-ahk"] = {
-    "command": "python3",
-    "args": ["-u", "${OC_ROOT}/pm-ahk.py", "serve"]
+        cat > "$OC_ROOT/pm-ahk.mcp.json" <<- MCPCFG
+{
+  "mcpServers": {
+    "pm-ahk": {
+      "command": "node",
+      "args": ["${PM_AHK_DST}/bin/pm-ahk.js", "serve", "--db", "${OC_ROOT}/.harness/harness.db"]
+    }
+  }
 }
-json.dump(cfg, open(path, "w"), indent=2)
-PYEOF
-        green "  MCP server registered for Claude Code"
+MCPCFG
+        green "  MCP config created: $OC_ROOT/pm-ahk.json"
       fi
 
       green "  MCP harness installed (stdio — auto-started by AI runtime)"
@@ -506,12 +515,9 @@ PYEOF
         mkdir -p "$DOCS_DIR"/{discovery/{problem-statements,personas,journey-maps},strategy/{positioning,market-analysis},delivery/{prds,user-stories},validation/{experiments,metrics-reports},decisions,stakeholders}
         green "  PM docs structure created: $DOCS_DIR/"
       fi
-    else
-    yellow "  Python 3.8+ required for MCP harness. Found: $(python3 --version 2>/dev/null || echo 'not found')"
     fi
   else
-    yellow "  Python 3 not found. MCP harness requires Python 3.12+."
-    yellow "  Install from https://python.org and re-run with --with-mcp"
+    yellow "  Node.js required for MCP harness. Install from https://nodejs.org and re-run with --with-mcp"
   fi
 fi
 
