@@ -505,10 +505,20 @@ PYEOF
         cp "$EXTRACTED_DIR/scripts/pm-ahk-server.py" "$OC_ROOT/pm-ahk-server.py"
         green "  HTTP MCP server installed"
 
+        # Create start script
+        cat > "$OC_ROOT/pm-ahk-start" <<- SCRIPT
+#!/usr/bin/env bash
+exec python3 "$OC_ROOT/pm-ahk-server.py" --port 5431 --host 127.0.0.1 --db "$OC_ROOT/.harness/harness.db"
+SCRIPT
+        chmod +x "$OC_ROOT/pm-ahk-start"
+
         # Try to install flask
-        if ! python3 -c "import flask" 2>/dev/null; then
-          yellow "  Flask not found. Installing..."
-          pip3 install flask 2>/dev/null || pip install flask 2>/dev/null || yellow "  Could not install Flask. Run 'pip install flask' manually."
+        if python3 -c "import flask" 2>/dev/null; then
+          :
+        elif pip3 install flask 2>/dev/null || pip install flask 2>/dev/null; then
+          green "  Flask installed"
+        else
+          yellow "  ⚠ Flask not found. Install it: pip install flask"
         fi
       fi
 
@@ -554,6 +564,18 @@ echo "    \"Write a PRD for checkout v2\""
 echo "    \"Research our churn problem\""
 echo "    \"Am I ready for a Director role?\""
 echo ""
+
+# MCP server hint
+if $WITH_MCP; then
+  echo "  ${BOLD}MCP Harness:${RESET}"
+  if [[ -f "$OC_ROOT/pm-ahk-start" ]]; then
+    echo "    Start: $OC_ROOT/pm-ahk-start"
+  else
+    echo "    Start: python3 $OC_ROOT/pm-ahk-server.py --port 5431 --db $OC_ROOT/.harness/harness.db"
+  fi
+  echo "    Status: $OC_ROOT/pm-ahk status"
+  echo ""
+fi
 
 # Show update hint if flag exists
 if [[ -f "$UPDATE_FLAG" ]]; then
