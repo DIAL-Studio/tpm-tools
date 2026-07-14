@@ -117,11 +117,10 @@ program
     const dbPath = opts.db ?? resolve(process.cwd(), '.harness', 'harness.db')
     const port = parseInt(opts.port, 10)
     const db = new PmAhkDB(dbPath)
-    // Try multiple possible dashboard locations
     const candidates = [
-      resolve(__dirname, '..', '..', '..', 'dashboard', 'dist'),        // repo: tpm-tools/scripts/pm-ahk/dist -> ../../../
-      resolve(__dirname, '..', '..', 'dashboard', 'dist'),              // repo: tpm-tools/scripts/pm-ahk/dist -> ../../
-      resolve(__dirname, '..', '..', 'pm-ahk-dashboard'),               // installed: ~/.config/opencode/pm-ahk/dist -> ../pm-ahk-dashboard
+      resolve(__dirname, '..', '..', '..', 'dashboard', 'dist'),
+      resolve(__dirname, '..', '..', 'dashboard', 'dist'),
+      resolve(__dirname, '..', '..', 'pm-ahk-dashboard'),
     ]
     const staticDir = candidates.find((d) => existsSync(join(d, 'index.html')))
     if (!staticDir) {
@@ -142,88 +141,195 @@ program
       '.ttf': 'font/ttf',
     }
 
+    function statusToAhk(s: string): string {
+      if (s === 'pending') return 'pending'
+      if (s === 'blocked') return 'blocked'
+      if (s === 'done' || s === 'approved') return 'done'
+      return 'in_progress' // discovery, strategy, spec, review
+    }
+
     const server = createServer((req, res) => {
+      res.setHeader('Access-Control-Allow-Origin', '*')
       const url = new URL(req.url ?? '/', `http://${req.headers.host}`)
       const path = url.pathname
 
-      // ── API: /api/overview ──────────────────────────────────────────────────
-      if (path === '/api/overview') {
+      // ── API: GET /api/stats ─────────────────────────────────────────────
+      if (req.method === 'GET' && path === '/api/stats') {
         const initiatives = db.listInitiatives()
-        const statusCounts: Record<string, number> = {
-          discovery: 0, strategy: 0, spec: 0, review: 0,
-          approved: 0, blocked: 0, done: 0,
-        }
+        const byStatus: Record<string, number> = { pending: 0, in_progress: 0, done: 0, blocked: 0 }
         for (const i of initiatives) {
-          if (i.status in statusCounts) statusCounts[i.status]++
+          const s = statusToAhk(i.status)
+          byStatus[s] = (byStatus[s] ?? 0) + 1
         }
-        const recentActions = db.listInitiatives().slice(0, 10).flatMap((i) =>
-          db.getActionsForInitiative(i.id).slice(0, 5).map((a) => ({
-            agent: a.agent, action_type: a.action_type,
-            title: i.title, created_at: a.created_at,
-          }))
-        )
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ ...statusCounts, recent_actions: recentActions.slice(0, 10) }))
+        const allActions = initiatives.flatMap((i) => db.getActionsForInitiative(i.id))
+        const totalActions = allActions.length
+        const totalFiles = allActions.reduce((sum, a) => sum + 1, 0) // approximate
+        const uniqueTools = 0 // not tracked per-action in our model
+        const activeAgents = new Set(allActions.map((a) => a.agent)).size
+        json(res, { byStatus, totalActions, totalFiles, uniqueTools, activeAgents })
         return
       }
 
-      // ── API: /api/initiatives ────────────────────────────────────────────────
-      if (path === '/api/initiatives') {
-        const status = url.searchParams.get('status') ?? undefined
-        const initiatives = db.listInitiatives(status)
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify(initiatives))
+      // ── API: GET /api/tasks ─────────────────────────────────────────────
+      if (req.method === 'GET' && path === '/api/tasks') {
+        const includeArchived = url.searchParams.get('includeArchived') === 'true'
+        let initiatives = db.listInitiatives()
+        if (!includeArchived) initiatives = initiatives.filter((i) => !i.archived_at)
+        const result = initiatives.map((i) => ({
+          id: i.id,
+          slug: i.slug,
+          title: i.title,
+          description: i.description,
+          status: statusToAhk(i.status),
+          assigned_to: null as string | null,
+          created_at: i.created_at,
+          started_at: null as string | null,
+          completed_at: i.status === 'done' || i.status === 'approved' ? i.updated_at : null,
+          archived_at: i.archived_at,
+          acceptance_total: db.listCriteria(i.id).length,
+          acceptance_met: db.listCriteria(i.id).filter((c) => c.met).length,
+        }))
+        json(res, result)
         return
       }
 
-      // ── API: /api/initiatives/:id ─────────────────────────────────────────────
-      const detailMatch = path.match(/^\/api\/initiatives\/(\d+)$/)
-      if (detailMatch) {
-        const id = parseInt(detailMatch[1], 10)
+      // ── API: GET /api/tasks/:id ─────────────────────────────────────────
+      const taskMatch = path.match(/^\/api\/tasks\/(\d+)$/)
+      if (req.method === 'GET' && taskMatch) {
+        const id = parseInt(taskMatch[1], 10)
         const initiative = db.getInitiative(id)
-        if (!initiative) {
-          res.writeHead(404)
-          res.end('Not found')
-          return
-        }
+        if (!initiative) { res.writeHead(404); res.end('{}'); return }
         const actions = db.getActionsForInitiative(id)
         const criteria = db.listCriteria(id)
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ initiative, actions, criteria }))
+        json(res, {
+          id: initiative.id,
+          slug: initiative.slug,
+          title: initiative.title,
+          description: initiative.description,
+          status: statusToAhk(initiative.status),
+          assigned_to: null,
+          created_at: initiative.created_at,
+          started_at: null,
+          completed_at: initiative.status === 'done' || initiative.status === 'approved' ? initiative.updated_at : null,
+          archived_at: initiative.archived_at,
+          acceptance_total: criteria.length,
+          acceptance_met: criteria.filter((c) => c.met).length,
+          acceptance: criteria.map((c) => ({ id: c.id, task_id: initiative.id, criterion: c.criterion, met: c.met })),
+          actions: actions.map((a) => ({
+            id: String(a.id),
+            task_id: initiative.id,
+            agent: a.agent,
+            status: a.status,
+            created_at: a.created_at,
+            completed_at: a.completed_at,
+            summary: a.summary,
+            sections: [{ id: a.id, action_id: String(a.id), section_type: 'result', content: a.content, created_at: a.created_at }],
+            files: [],
+            tools: [],
+          })),
+        })
         return
       }
 
-      // ── API: /api/agents ──────────────────────────────────────────────────────
-      if (path === '/api/agents') {
+      // ── API: PATCH /api/tasks/:id (update) ──────────────────────────────
+      const taskUpdateMatch = path.match(/^\/api\/tasks\/(\d+)$/)
+      if (req.method === 'PATCH' && taskUpdateMatch) {
+        const id = parseInt(taskUpdateMatch[1], 10)
+        let body = ''
+        req.on('data', (c) => body += c)
+        req.on('end', () => {
+          const data = JSON.parse(body)
+          if (data.title !== undefined || data.description !== undefined) {
+            db.editInitiative(id, data.title, data.description)
+          }
+          const initiative = db.getInitiative(id)
+          json(res, initiative ?? {})
+        })
+        return
+      }
+
+      // ── API: PATCH /api/tasks/:id/archive ───────────────────────────────
+      const archiveMatch = path.match(/^\/api\/tasks\/(\d+)\/archive$/)
+      if (req.method === 'PATCH' && archiveMatch) {
+        const id = parseInt(archiveMatch[1], 10)
+        db.archiveInitiative(id)
+        json(res, { id, archived: true })
+        return
+      }
+
+      // ── API: PATCH /api/tasks/:id/unarchive ─────────────────────────────
+      const unarchiveMatch = path.match(/^\/api\/tasks\/(\d+)\/unarchive$/)
+      if (req.method === 'PATCH' && unarchiveMatch) {
+        const id = parseInt(unarchiveMatch[1], 10)
+        db.unarchiveInitiative(id)
+        json(res, { id, unarchived: true })
+        return
+      }
+
+      // ── API: GET /api/tools/top ─────────────────────────────────────────
+      if (req.method === 'GET' && path === '/api/tools/top') {
+        json(res, [])
+        return
+      }
+
+      // ── API: GET /api/tools/recent ──────────────────────────────────────
+      if (req.method === 'GET' && path === '/api/tools/recent') {
+        json(res, [])
+        return
+      }
+
+      // ── API: GET /api/files/top ─────────────────────────────────────────
+      if (req.method === 'GET' && path === '/api/files/top') {
+        json(res, [])
+        return
+      }
+
+      // ── API: GET /api/files/recent ──────────────────────────────────────
+      if (req.method === 'GET' && path === '/api/files/recent') {
+        json(res, [])
+        return
+      }
+
+      // ── API: GET /api/agents/stats ──────────────────────────────────────
+      if (req.method === 'GET' && path === '/api/agents/stats') {
         const initiatives = db.listInitiatives()
-        const agentMap = new Map<string, { total_actions: number; initiatives_count: number }>()
+        const agentMap = new Map<string, { actions_total: number; actions_done: number; actions_blocked: number; tasks_worked: number; files_touched: number }>()
         for (const i of initiatives) {
           const actions = db.getActionsForInitiative(i.id)
+          const seen = new Set<string>()
           for (const a of actions) {
-            const entry = agentMap.get(a.agent) ?? { total_actions: 0, initiatives_count: 0 }
-            entry.total_actions++
-            agentMap.set(a.agent, entry)
-          }
-          if (actions.length > 0) {
-            const seen = new Set<string>()
-            for (const a of actions) {
-              if (!seen.has(a.agent)) {
-                seen.add(a.agent)
-                const entry = agentMap.get(a.agent)!
-                entry.initiatives_count++
-              }
-            }
+            let e = agentMap.get(a.agent)
+            if (!e) { e = { actions_total: 0, actions_done: 0, actions_blocked: 0, tasks_worked: 0, files_touched: 0 }; agentMap.set(a.agent, e) }
+            e.actions_total++
+            if (a.status === 'completed') e.actions_done++
+            if (a.status === 'blocked') e.actions_blocked++
+            if (!seen.has(a.agent)) { seen.add(a.agent); e.tasks_worked++ }
           }
         }
-        const agents = Array.from(agentMap.entries()).map(([agent, stats]) => ({
-          agent, total_actions: stats.total_actions, initiatives_count: stats.initiatives_count,
-        }))
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify(agents))
+        json(res, Array.from(agentMap.entries()).map(([agent, s]) => ({ agent, ...s })))
         return
       }
 
-      // ── Static SPA ──────────────────────────────────────────────────────────
+      // ── API: GET /api/timeline ──────────────────────────────────────────
+      if (req.method === 'GET' && path === '/api/timeline') {
+        const initiatives = db.listInitiatives().slice(0, 50)
+        const entries = initiatives.flatMap((i) =>
+          db.getActionsForInitiative(i.id).map((a) => ({
+            id: a.id,
+            task_id: i.id,
+            task_title: i.title,
+            task_slug: i.slug,
+            agent: a.agent,
+            status: a.status,
+            summary: a.summary,
+            created_at: a.created_at,
+          }))
+        ).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 50)
+        json(res, entries)
+        return
+      }
+
+      // ── Static SPA ──────────────────────────────────────────────────────
       const filePath = path === '/' ? join(staticDir, 'index.html') : join(staticDir, path)
       if (existsSync(filePath)) {
         const ext = extname(filePath)
@@ -231,18 +337,19 @@ program
         res.end(readFileSync(filePath))
         return
       }
-      // SPA fallback
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
       res.end(readFileSync(join(staticDir, 'index.html')))
     })
 
+    function json(res: import('node:http').ServerResponse, data: unknown): void {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(data))
+    }
+
     server.listen(port, () => {
-      const url = `http://localhost:${port}`
-      console.log(`Dashboard: ${url}`)
+      console.log(`Dashboard: http://localhost:${port}`)
       if (opts.open !== false) {
-        import('node:child_process').then((cp) => {
-          cp.exec(`open "${url}"`)
-        })
+        import('node:child_process').then((cp) => cp.exec(`open "http://localhost:${port}"`))
       }
     })
   })

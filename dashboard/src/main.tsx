@@ -1,15 +1,47 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { App } from './App'
-import './index.css'
+import { createRouter,RouterProvider } from '@tanstack/react-router'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 
-const queryClient = new QueryClient()
+import { routeTree } from './routeTree.gen'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+import './styles/global.css'
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 10_000,
+      refetchOnWindowFocus: true,
+      retry: 1,
+    },
+  },
+})
+
+const router = createRouter({
+  routeTree,
+  context: { queryClient },
+})
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
+
+// WebSocket: broadcast from server → invalidate all queries
+const ws = new WebSocket(`ws://${location.host}/ws`)
+ws.onmessage = (e: MessageEvent) => {
+  try {
+    const msg = JSON.parse(e.data as string) as { type: string }
+    if (msg.type === 'update') void queryClient.invalidateQueries()
+  } catch { /* ignore */ }
+}
+
+const rootEl = document.getElementById('root')!
+createRoot(rootEl).render(
+  <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <RouterProvider router={router} />
     </QueryClientProvider>
-  </React.StrictMode>,
+  </StrictMode>,
 )
